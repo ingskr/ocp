@@ -1,1 +1,11 @@
 temporary table：临时表
+DML表数据结构有三种：① insert （插入）；② update（更新）；③ delete（删除）。
+PGA(Process Global Area)，是server process一段私有内存区，它包含有全局变量，数据结构和一些控制信息,如
+果PGA设置的过小，会导致Oracle频繁同磁盘进行交换，性能将会受到很大影响。
+inventory 库存
+AWR（Automatic Workload Repository）报告指标
+retain保持
+snapshots简介
+segment 段
+extents 拓展范围
+dictionary table 字典表
