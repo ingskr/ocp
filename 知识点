@@ -9,3 +9,11 @@ snapshots简介
 segment 段
 extents 拓展范围
 dictionary table 字典表
+控制文件：
+查看控制文件路径：
+show parameter control_files;
+select name from v$controlfile;
+备份二进制文件：
+alter databse backup controlfile to trace as 'XXXXXX';
+
+
