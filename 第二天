@@ -34,3 +34,17 @@ transactional:事务关闭方式
 immediate:立即关闭方式
 abort:强制终止关闭方式
 normal,transactional,immediate三种关闭方式，属于一致性数据库（干净数据库）关闭，特点无需进行数据库恢复。
+**************************************************
+下午
+创建pfile
+create pfile from spfile;
+创建spfile
+create spfile from pfile;
+create pfile='路径/文件名' from spfile;
+startup pfile='路径/文件名'
+spfile所在目录
+cd $ORACLE_HOME/dbs
+所生成的pfile也在$ORACLE_HOME/dbs
+undo多版本一致读特性，select操作不会阻碍任何操作，也不会被任何操作阻碍。
+
+
