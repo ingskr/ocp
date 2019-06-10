@@ -46,5 +46,226 @@ spfile所在目录
 cd $ORACLE_HOME/dbs
 所生成的pfile也在$ORACLE_HOME/dbs
 undo多版本一致读特性，select操作不会阻碍任何操作，也不会被任何操作阻碍。
+*********************************************************************************
+内存:PGA(一对一)+SGA（一对多）
+
+实例：
+ORACLE SGA + ORACLE后台进程
+
+SGA
+data buffer
+redolog buffer
+shared pool
+large pool
+java pool
+
+
+
+
+
+登陆数据库
+[oracle@localhost tmp]$ sqlplus / as sysdba
+
+查看当前数据库的状态
+SQL> select status from v$instance;
+
+数据库启动分为三个阶段
+
+startup nomount;
+1.nomount：打开参数文件，此时分配内存和后台进程
+SQL> select status from v$instance;
+
+STATUS
+------------
+STARTED
+
+SQL> 
+
+
+alter database backup controlfile to trace as '/tmp/ctl';
+
+
+startup mount;/alter database mount;
+2.mount：打开控制文件
+SQL> select status from v$instance;
+
+STATUS
+------------
+MOUNTED
+
+
+
+startup/alter database open;
+3.open：打开数据文件和日志文件
+
+SQL> select status from v$instance;
+
+STATUS
+------------
+OPEN
+
+
+关闭数据
+shutdown immediate
+
+强制关闭数据库
+shutdown abort
+
+startup force=shutdown abort+startup
+
+
+数据库在挂载状态（nomount）
+打开参数文件pfile(文本) or spfile（二进制）
+$ORACLE_HOME/dbs找
+先找SPFILE，发现spfile不在，然后再去找pfile
+动态初始化参数文件 spfile格式:spfile+数据库实例名.ora
+静态初始化参数文件 pfile格式:init+数据库实例名.ora
+
+
+
+
+查看当前数据库用的是哪种模式的参数文件pfile(文本)/spfile(二进制)
+SQL> show parameter spfile;
+
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+spfile                               string      /u01/app/oracle/product/11.2.0
+                                                 /db_1/dbs/spfileorcl.ora
+
+创建pfile
+SQL> create pfile from spfile;
+
+
+创建spfile
+SQL> create spfile from pfile;
+
+File created.
+
+SQL> create pfile='路径/文件名' from spfile;
+
+
+startup pfile='路径/文件名';
+
+
+spfile在此目录
+[oracle@caizhibin ~]$ cd $ORACLE_HOME/dbs
+
+生成的pfile也在$ORACLE_HOME/dbs
+-rw-r--r-- 1 oracle oinstall  807 May 14 09:48 initorcl.ora
+
+
+启动数据库时查找参数文件顺序
+spfileSID.ora ->spfile.ora -> initsid.ora
+
+
+指定pfile来启动数据库
+SQL> startup pfile='/u01/app/oracle/product/11.2.0/db_1/dbs/initorcl.ora';
+
+
+
+spfile情况下：
+修改参数文件里的参数有两种模式spfile |memory | both
+SQL> alter system set undo_retention=1000 scope=memory;
+
+
+1.生产环境和测试环境都用spfile,除非自己想看文本的参数
+
+2.修改的模式有三种spfile |memory | both，pfile默认是memory,spfile默认是both,both=spfile+memory
+.
+3.memory是立即生效的，不会写进物理的参数文件里面。
+
+
+
+1.利用spfile创建pfile
+
+2.用pfile启动数据库
+
+3.修改undo_retention=1000
+
+4.用spfile启动数据库
+
+5.修改undo_retention=1000，再创建pfile，然后cat pfile文件里的undo_retention是否等于1000
+
+
+
+
+告警日志
+/u01/app/oracle/diag/rdbms/orcl/orcl/trace/alert_orcl.log
+
+
+
+SGA:比较重要的事shared pool ,data buffer cache ,log buffer
+
+脏缓存：data buffer和数据文件不一致，只有DML才会产生脏缓存。
+
+自由缓存：data buffer和数据文件一致。
+
+
+LRU算法：
+插入一个新块时，判断冷段最后一个块
+1.如果判断是不经常使用的块，则踢掉，然后把新块加入到冷段最前头。
+2.如果端盘是经常使用的块，则放在热段最前头。
+
+
+
+log buffer：1.作用防止断电，导致的数据丢失。
+log buffer 写进日志文件是顺序写。
+
+10g:
+开启ASMM
+设置sga大小
+自动管理SGA:data buffer cache,shared pool, large pool.
+log buffer 需要手动管理
+
+设置PGA大小(9i开始自动管理)
+
+
+
+11g:
+SQL> 
+SQL> show parameter pga
+
+NAME                                 TYPE        VALUE
+------------------------------------ ----------- ------------------------------
+pga_aggregate_target                 big integer 0
+
+
+SQL> show parameter sga
+sga_target                           big integer 0
+
+
+SQL> show parameter memory
+memory_target                        big integer 1472M
+
+set lin 200
+
+col COMPONENT for a40
+
+ 1*  SELECT component, current_size / 1024 / 1024, min_size, max_size FROM v$memory_dynamic_components
+SQL> /
+
+COMPONENT                                CURRENT_SIZE/1024/1024   MIN_SIZE   MAX_SIZE
+---------------------------------------- ---------------------- ---------- ----------
+shared pool                                                 240  234881024  251658240
+large pool                                                   16   16777216   16777216
+java pool                                                    16   16777216   16777216
+streams pool                                                  0          0          0
+SGA Target                                                  880  922746880  922746880
+DEFAULT buffer cache                                        592  620756992  637534208
+KEEP buffer cache                                             0          0          0
+RECYCLE buffer cache                                          0          0          0
+DEFAULT 2K buffer cache                                       0          0          0
+DEFAULT 4K buffer cache                                       0          0          0
+DEFAULT 8K buffer cache                                       0          0          0
+
+COMPONENT                                CURRENT_SIZE/1024/1024   MIN_SIZE   MAX_SIZE
+---------------------------------------- ---------------------- ---------- ----------
+DEFAULT 16K buffer cache                                      0          0          0
+DEFAULT 32K buffer cache                                      0          0          0
+Shared IO Pool                                                0          0          0
+PGA Target                                                  592  620756992  620756992
+ASM Buffer Cache                                              0          0          0
+
+16 rows selected.
 
 
