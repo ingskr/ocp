@@ -1,0 +1,36 @@
+ocp上午$################################################
+登录数据库
+sqlplus / as sysdba
+查看数据库当前状态
+select status from v$instance;
+数据库启动分为三个阶段
+starup nomount;
+1.nomount:打开参数文件，此时分为内存和后台进程
+select status from v$instance;
+2.mount:打开控制文件
+select status from v$instance;
+3.open：打开数据文件和日志文件
+SQL> select status from v$instance;
+####################################
+初始化参数文件
+静态初始化参数文件（pfile）：文本形式，默认名：initsid.ora
+动态初始化参数文件（spfile）:而精致你形式，默认名：spfilesid.ora
+创建参数文件的时候要带上路径
+create pfile='路径/文件名' from spfile;
+startup pfile='路径/文件名';
+强制关闭数据库
+shutdown abort
+startup force=shutdown abort+startup
+数据库状态打开顺序
+shutdown（关闭）---->   nomount（非装载） --（读取控制文件）--->   mount（装载） --（加载数据库文件）-- >  open(打开)
+在mount状态下，无法手工切换日志文件组，说明日志文件没有被读取
+当数据库open后，可以切换
+说明数据库从mount到open加载日志文件
+关闭数据库
+在执行完全备份的时候，修改初始化参数的时候，需要暂停oracle服务
+关闭四种方式
+normal:正常关闭
+transactional:事务关闭方式
+immediate:立即关闭方式
+abort:强制终止关闭方式
+normal,transactional,immediate三种关闭方式，属于一致性数据库（干净数据库）关闭，特点无需进行数据库恢复。
