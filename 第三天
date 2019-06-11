@@ -1,6 +1,9 @@
 上午
+SGA:比较重要的事shared pool ,data buffer cache ,log buffer
 oracle数据库=数据文件+控制文件+联机控制文件（缺一不可恢复）
- 
- 
+脏缓存：data buffer和数据文件不一致，只有DML才会产生脏缓存。
+自由缓存：data buffer和数据文件一致。
+下午
+
  
  
